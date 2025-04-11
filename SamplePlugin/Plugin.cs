@@ -5,6 +5,8 @@ using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using SamplePlugin.Windows;
+using FFXIVClientStructs.FFXIV.Client.UI.Arrays;
+using System;
 
 namespace SamplePlugin;
 
@@ -17,7 +19,15 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
 
+    // For messages in game from the plugin
+    [PluginService] internal static IChatGui Chat { get; private set; } = null!;
+    // For party list functionality
+    [PluginService] internal static IPartyList PartyList { get; private set; } = null!;
+
+    // Constants for command strings
     private const string CommandName = "/pmycommand";
+    private const string HelloCommand = "/hello";
+    private const string PartyHpCommand = "/php";
 
     public Configuration Configuration { get; init; }
 
@@ -43,7 +53,15 @@ public sealed class Plugin : IDalamudPlugin
             HelpMessage = "A useful message to display in /xlhelp"
         });
 
-        PluginInterface.UiBuilder.Draw += DrawUI;
+        CommandManager.AddHandler(HelloCommand, new CommandInfo(OnHelloCommand)
+        {
+            HelpMessage = "Prints Hello, World!"
+        });
+
+        CommandManager.AddHandler(PartyHpCommand, new CommandInfo(OnPartyHPCommand)
+        {
+            HelpMessage = "Displays HP of self and party members."
+        });
 
         // This adds a button to the plugin installer entry of this plugin which allows
         // to toggle the display status of the configuration ui
@@ -66,12 +84,42 @@ public sealed class Plugin : IDalamudPlugin
         MainWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
+        CommandManager.RemoveHandler(HelloCommand);
+        CommandManager.RemoveHandler(PartyHpCommand);
     }
 
     private void OnCommand(string command, string args)
     {
         // in response to the slash command, just toggle the display status of our main ui
         ToggleMainUI();
+    }
+
+    private void OnHelloCommand(string command, string args)
+    { 
+        // Prints hello world
+        Chat.Print("Hello, World!");
+    }
+
+    private void OnPartyHPCommand(string command, string args)
+    {
+        // Show self HP
+        var player = ClientState.LocalPlayer;
+        if (player != null){
+            Chat.Print($"{player.Name.TextValue} - {player.CurrentHp}/{player.MaxHp} HP (You)");
+        }
+
+        // If in party show everyone else's hp
+        if (PartyList.Length > 0)
+        {
+            foreach (var member in PartyList)
+            {
+                if (member.Name == player?.Name && member.World.RowId == player?.HomeWorld.RowId) // Skip self
+                {
+                    continue;
+                }
+                Chat.Print($"{member.Name} - {member.CurrentHP}/{member.MaxHP} HP");
+            }
+        }
     }
 
     private void DrawUI() => WindowSystem.Draw();

@@ -1,8 +1,8 @@
 {
-  "Author": "your name here",
-  "Name": "Sample Plugin",
-  "Punchline": "A short one-liner that shows up in /xlplugins.",
-  "Description": "A description that shows up in /xlplugins. List any major slash-command(s).",
+  "Author": "Ryviance",
+  "Name": "Hello World",
+  "Punchline": "Hello World, in FFXIV.",
+  "Description": "Familiarizing myself with Dalamud",
   "ApplicableVersion": "any",
   "Tags": [
     "sample",
