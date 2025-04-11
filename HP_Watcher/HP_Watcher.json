@@ -1,7 +1,7 @@
 {
   "Author": "Ryviance",
-  "Name": "Hello World",
-  "Punchline": "Hello World, in FFXIV.",
+  "Name": "Hp Watcher",
+  "Punchline": "Yells at you when HP gets too low.",
   "Description": "Familiarizing myself with Dalamud",
   "ApplicableVersion": "any",
   "Tags": [
