@@ -3,6 +3,7 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using System.IO;
 using Dalamud.Interface.Windowing;
+using Dalamud.Interface.Internal;
 using Dalamud.Plugin.Services;
 using HP_Watcher.Windows;
 using FFXIVClientStructs.FFXIV.Client.UI.Arrays;
@@ -21,7 +22,6 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
-
 
     // For messages in game from the plugin
     [PluginService] internal static IChatGui Chat { get; private set; } = null!;
