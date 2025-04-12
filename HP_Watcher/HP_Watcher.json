@@ -1,6 +1,7 @@
 {
   "Author": "Ryviance",
   "Name": "Hp Watcher",
+  "InternalName": "HP_Watcher",
   "Punchline": "Yells at you when HP gets too low.",
   "Description": "Familiarizing myself with Dalamud",
   "ApplicableVersion": "any",
