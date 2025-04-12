@@ -8,12 +8,12 @@
       "AssemblyVersion": "0.0.1",
       "DalamudApiLevel": 9,
       "ApplicableVersion": "any",
-      "RepoUrl": "https://raw.githubusercontent.com/ryviance/XIV-HP-Watcher-Plugin/main/repo.json",
+      "RepoUrl": "https://raw.githubusercontent.com/ryviance/XIV-HP-Watcher-Plugin/master/repo.json",
       "Tags": ["hp", "warning"],
-      "DownloadLinkInstall": "https://raw.githubusercontent.com/ryviance/XIV-HP-Watcher-Plugin/master/HP_Watcher/latest/HP_Watcher.zip",
+      "DownloadLinkInstall": "https://github.com/ryviance/XIV-HP-Watcher-Plugin/releases/download/v0.0.1/HP_Watcher-v0.0.1.zip",
       "DownloadLinkTesting": "",
       "DownloadLinkUpdate": "",
-      "IconUrl": "https://raw.githubusercontent.com/ryviance/XIV-HP-Watcher-Plugin/main/icon.png",
+      "IconUrl": "",
       "IsTestingExclusive": false,
       "IsHide": false
     }
