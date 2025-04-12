@@ -7,6 +7,8 @@ using Dalamud.Plugin.Services;
 using HP_Watcher.Windows;
 using FFXIVClientStructs.FFXIV.Client.UI.Arrays;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace HP_Watcher;
 
@@ -18,6 +20,8 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
+    [PluginService] internal static IFramework Framework { get; private set; } = null!;
+
 
     // For messages in game from the plugin
     [PluginService] internal static IChatGui Chat { get; private set; } = null!;
@@ -26,8 +30,11 @@ public sealed class Plugin : IDalamudPlugin
 
     // Constants for command strings
     private const string CommandName = "/pmycommand";
-    private const string HelloCommand = "/hello";
     private const string PartyHpCommand = "/php";
+
+    // Constants for method utilities
+    private readonly Dictionary<string, bool> lowHpWarnings = new(); // Used in CheckHP to not spam warnings
+    private DateTime lastCleanupTime = DateTime.Now; // Keep track of time to purge readonly dictionary of unused keys
 
     public Configuration Configuration { get; init; }
 
@@ -48,14 +55,13 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
+        // Polling
+        PluginInterface.UiBuilder.Draw += CheckHP;
+        Framework.Update += OnUpdate;
+
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "A useful message to display in /xlhelp"
-        });
-
-        CommandManager.AddHandler(HelloCommand, new CommandInfo(OnHelloCommand)
-        {
-            HelpMessage = "Prints Hello, World!"
         });
 
         CommandManager.AddHandler(PartyHpCommand, new CommandInfo(OnPartyHPCommand)
@@ -84,20 +90,16 @@ public sealed class Plugin : IDalamudPlugin
         MainWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
-        CommandManager.RemoveHandler(HelloCommand);
         CommandManager.RemoveHandler(PartyHpCommand);
+        
+        Framework.Update -= OnUpdate;
+        PluginInterface.UiBuilder.Draw -= CheckHP;
     }
 
     private void OnCommand(string command, string args)
     {
         // in response to the slash command, just toggle the display status of our main ui
         ToggleMainUI();
-    }
-
-    private void OnHelloCommand(string command, string args)
-    { 
-        // Prints hello world
-        Chat.Print("Hello, World!");
     }
 
     private void OnPartyHPCommand(string command, string args)
@@ -122,8 +124,70 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    private void DrawUI() => WindowSystem.Draw();
+    private void CheckHP()
+    {   
+        // Clean dictionary every 15 minutes
 
+
+
+        var player = ClientState.LocalPlayer;
+        if (player != null)
+        {   
+            string playerKey = player.Name.TextValue;
+            float hpPercent = (float)player.CurrentHp / player.MaxHp;
+
+            if (hpPercent < 0.6f)
+            {   
+                if (!lowHpWarnings.GetValueOrDefault(playerKey, false))
+                {
+                    Chat.Print($"WARNING: You are below 60% HP! ({player.CurrentHp}/{player.MaxHp})");
+                    lowHpWarnings[playerKey] = true;
+                }
+            } else {
+                lowHpWarnings[playerKey] = false;
+            }
+        }
+
+        foreach (var member in PartyList)
+        {   
+            string memberKey = member.Name.TextValue;
+            float partyHpPercent = (float)member.CurrentHP / member.MaxHP;
+
+            if (partyHpPercent < 0.6f)
+            {   
+                if (!lowHpWarnings.GetValueOrDefault(memberKey, false))
+                {
+                    Chat.Print($"WARNING: {member.Name} is below 60% HP! ({member.CurrentHP}/{member.MaxHP})");
+                    lowHpWarnings[memberKey] = true;
+                }
+            } else {
+                lowHpWarnings[memberKey] = false;
+            }
+        }
+    }
+
+    private void DrawUI() => WindowSystem.Draw();
+    private void OnUpdate(IFramework framework)
+    {   
+        // This method cleans up the lowHPWarnings dictionary that CheckHP() checks for true/false to prevent message/warning spams
+        if ((DateTime.Now - lastCleanupTime).TotalMinutes > 15)
+        {
+            var playerName = ClientState.LocalPlayer?.Name.TextValue;
+
+            var keysToRemove = lowHpWarnings
+            .Where(kvp => kvp.Key != playerName)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+            foreach (var key in keysToRemove)
+            {
+                lowHpWarnings.Remove(key);
+            }
+
+            lastCleanupTime = DateTime.Now;
+        }
+    }
     public void ToggleConfigUI() => ConfigWindow.Toggle();
     public void ToggleMainUI() => MainWindow.Toggle();
+
 }
