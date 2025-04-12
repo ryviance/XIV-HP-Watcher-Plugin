@@ -5,8 +5,7 @@
   "Description": "Familiarizing myself with Dalamud",
   "ApplicableVersion": "any",
   "Tags": [
-    "sample",
-    "plugin",
-    "goats"
+    "hp",
+    "warning"
   ]
 }
