@@ -6,7 +6,7 @@
       "Description": "Familiarizing myself with Dalamud.",
       "InternalName": "HP_Watcher",
       "AssemblyVersion": "0.0.1",
-      "DalamudApiLevel": 9,
+      "DalamudApiLevel": 12,
       "ApplicableVersion": "any",
       "RepoUrl": "https://raw.githubusercontent.com/ryviance/XIV-HP-Watcher-Plugin/master/repo.json",
       "Tags": ["hp", "warning"],
