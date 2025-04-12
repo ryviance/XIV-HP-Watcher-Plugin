@@ -3,10 +3,11 @@
   "Name": "HP Watcher",
   "InternalName": "HP_Watcher",
   "Punchline": "Yells at you when HP gets too low.",
-  "Description": "Alerts the player whenever they are any party member falls below a threshold.",
+  "Description": "Alerts the player whenever they or any party member falls below a threshold.",
   "ApplicableVersion": "any",
   "Tags": [
     "hp",
     "warning"
-  ]
+  ],
+  "IconUrl": "https://raw.githubusercontent.com/ryviance/XIV-HP-Watcher-Plugin/master/Data/HP_Watcher_Icon.png"
 }
