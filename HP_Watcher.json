@@ -1,9 +1,9 @@
 {
   "Author": "Ryviance",
-  "Name": "Hp Watcher",
+  "Name": "HP Watcher",
   "InternalName": "HP_Watcher",
   "Punchline": "Yells at you when HP gets too low.",
-  "Description": "Familiarizing myself with Dalamud",
+  "Description": "Alerts the player whenever they are any party member falls below a threshold.",
   "ApplicableVersion": "any",
   "Tags": [
     "hp",
