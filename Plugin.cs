@@ -10,6 +10,8 @@ using FFXIVClientStructs.FFXIV.Client.UI.Arrays;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HP_Watcher;
 
@@ -22,14 +24,10 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
-
-    // For messages in game from the plugin
-    [PluginService] internal static IChatGui Chat { get; private set; } = null!;
-    // For party list functionality
-    [PluginService] internal static IPartyList PartyList { get; private set; } = null!;
+    [PluginService] internal static IChatGui Chat { get; private set; } = null!;  // For system messages in game from the plugin
+    [PluginService] internal static IPartyList PartyList { get; private set; } = null!; // For party list functionality
 
     // Constants for command strings
-    private const string CommandName = "/pmycommand";
     private const string PartyHpCommand = "/php";
 
     // Constants for method utilities
@@ -41,6 +39,8 @@ public sealed class Plugin : IDalamudPlugin
     public readonly WindowSystem WindowSystem = new("HP_Watcher");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
+
+    private CancellationTokenSource? cleanupTaskToken;
 
     public Plugin()
     {
@@ -55,16 +55,14 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
-        // Polling
-        PluginInterface.UiBuilder.Draw += CheckHP;
-        Framework.Update += OnUpdate;
+        // Polling (run every frame)
+        PluginInterface.UiBuilder.Draw += CheckHp; // Check HP 
+        
+        // Clean HP Warning dictionary
+        cleanupTaskToken = new CancellationTokenSource();
+        _ = RunPeriodicCleanup(cleanupTaskToken.Token); // Wait every 15 minutes to clean
 
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
-        {
-            HelpMessage = "A useful message to display in /xlhelp"
-        });
-
-        CommandManager.AddHandler(PartyHpCommand, new CommandInfo(OnPartyHPCommand)
+        CommandManager.AddHandler(PartyHpCommand, new CommandInfo(OnPartyHpCommand)
         {
             HelpMessage = "Displays HP of self and party members."
         });
@@ -83,17 +81,16 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     public void Dispose()
-    {
+    {   
         WindowSystem.RemoveAllWindows();
-
         ConfigWindow.Dispose();
         MainWindow.Dispose();
+        cleanupTaskToken?.Cancel(); // Stop cleaning dictionary on shutdown
 
-        CommandManager.RemoveHandler(CommandName);
         CommandManager.RemoveHandler(PartyHpCommand);
         
-        Framework.Update -= OnUpdate;
-        PluginInterface.UiBuilder.Draw -= CheckHP;
+        
+        PluginInterface.UiBuilder.Draw -= CheckHp; // Stop checking HP every frame
     }
 
     private void OnCommand(string command, string args)
@@ -102,8 +99,9 @@ public sealed class Plugin : IDalamudPlugin
         ToggleMainUI();
     }
 
-    private void OnPartyHPCommand(string command, string args)
-    {
+    private void OnPartyHpCommand(string command, string args)
+    {   
+        // Method description: Displays HP of player and all party members in chat.
         // Show self HP
         var player = ClientState.LocalPlayer;
         if (player != null){
@@ -124,12 +122,9 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    private void CheckHP()
+    private void CheckHp()
     {   
-        // Clean dictionary every 15 minutes
-
-
-
+        // Method description: Outputs a warning message if party member or player falls below threshold
         var player = ClientState.LocalPlayer;
         if (player != null)
         {   
@@ -167,9 +162,12 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     private void DrawUI() => WindowSystem.Draw();
-    private void OnUpdate(IFramework framework)
+
+    private void CleanupLowHpWarnings()
     {   
-        // This method cleans up the lowHPWarnings dictionary that CheckHP() checks for true/false to prevent message/warning spams
+        /* Method Description: Cleans up the lowHPWarnings dictionary so there are no memory issues after 
+        impossibly long gameplay sessions.*/
+
         if ((DateTime.Now - lastCleanupTime).TotalMinutes > 15)
         {
             var playerName = ClientState.LocalPlayer?.Name.TextValue;
@@ -187,7 +185,18 @@ public sealed class Plugin : IDalamudPlugin
             lastCleanupTime = DateTime.Now;
         }
     }
+
+    private async Task RunPeriodicCleanup(CancellationToken token)
+    {   
+        // Method description: Calls CleanupLowHpWarnings every 15 minutes
+        while (!token.IsCancellationRequested)
+        {
+            await Task.Delay(TimeSpan.FromMinutes(15), token);
+            CleanupLowHpWarnings();
+        }
+    }
+
+
     public void ToggleConfigUI() => ConfigWindow.Toggle();
     public void ToggleMainUI() => MainWindow.Toggle();
-
 }
