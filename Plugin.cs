@@ -1,12 +1,12 @@
-﻿using Dalamud.Game.Command;
+﻿// File: Plugin.cs
+// Description: Main plugin logic
+
+using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using System.IO;
-using Dalamud.Interface.Windowing;
-using Dalamud.Interface.Internal;
 using Dalamud.Plugin.Services;
+using Dalamud.Interface.Windowing;
 using HP_Watcher.Windows;
-using FFXIVClientStructs.FFXIV.Client.UI.Arrays;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,91 +17,73 @@ namespace HP_Watcher;
 
 public sealed class Plugin : IDalamudPlugin
 {
-    [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
-    [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
-    [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
-    [PluginService] internal static IClientState ClientState { get; private set; } = null!;
-    [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
-    [PluginService] internal static IPluginLog Log { get; private set; } = null!;
-    [PluginService] internal static IFramework Framework { get; private set; } = null!;
+    [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!; // For UI and loading files
+    [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!; // To create slash commands
+    [PluginService] internal static IClientState ClientState { get; private set; } = null!; // To access any player-related data
+    [PluginService] internal static IPluginLog Log { get; private set; } = null!; // For development/bug reports
     [PluginService] internal static IChatGui Chat { get; private set; } = null!;  // For system messages in game from the plugin
     [PluginService] internal static IPartyList PartyList { get; private set; } = null!; // For party list functionality
 
     // Constants for command strings
     private const string PartyHpCommand = "/php";
 
-    // Constants for method utilities
+    // Variables for method utilities
     private readonly Dictionary<string, bool> lowHpWarnings = new(); // Used in CheckHP to not spam warnings
     private DateTime lastCleanupTime = DateTime.Now; // Keep track of time to purge readonly dictionary of unused keys
 
-    public Configuration Configuration { get; init; }
+    public Configuration Configuration { get; init; } // Initialize config data
 
+    // ImGUI windows
     public readonly WindowSystem WindowSystem = new("HP_Watcher");
     private ConfigWindow ConfigWindow { get; init; }
-    private MainWindow MainWindow { get; init; }
 
-    private CancellationTokenSource? cleanupTaskToken;
+    private CancellationTokenSource? cleanupTaskToken; // Threading for cleanup
 
     public Plugin()
-    {
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-
-        // you might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
-
-        ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, goatImagePath);
-
-        WindowSystem.AddWindow(ConfigWindow);
-        WindowSystem.AddWindow(MainWindow);
-
-        // Polling (run every frame)
-        PluginInterface.UiBuilder.Draw += CheckHp; // Check HP 
+    {   
+        // Initialize and load previous config data from Configuration.cs
+        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration(); 
         
-        // Clean HP Warning dictionary
+        // Initialize and draw ImGUI config window
+        ConfigWindow = new ConfigWindow(this);
+        WindowSystem.AddWindow(ConfigWindow);
+
+        // UIBuilder.Draw is a hook for every-frame logic, not exclusively used for UI:
+        PluginInterface.UiBuilder.Draw += CheckHp; // Check HP of party members and player every frame
+        PluginInterface.UiBuilder.Draw += DrawUI; // Check every frame if it needs to draw config window (due to button/command, etc.)
+        
+        // Clean HP Warning dictionary using threading
         cleanupTaskToken = new CancellationTokenSource();
         _ = RunPeriodicCleanup(cleanupTaskToken.Token); // Wait every 15 minutes to clean
 
+        // Add commands and their help messages
         CommandManager.AddHandler(PartyHpCommand, new CommandInfo(OnPartyHpCommand)
         {
             HelpMessage = "Displays HP of self and party members."
         });
 
-        // This adds a button to the plugin installer entry of this plugin which allows
-        // to toggle the display status of the configuration ui
+        // Add functionality to "Open" button in the plugin installer
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
 
-        // Adds another button that is doing the same but for the main ui of the plugin
-        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
-
-        // Add a simple message to the log with level set to information
-        // Use /xllog to open the log window in-game
-        // Example Output: 00:57:54.959 | INF | [HP_Watcher] ===A cool log message from HP_Watcher===
-        Log.Information($"===A cool log message from {PluginInterface.Manifest.Name}===");
+        // Startup log message in Dalamud's plugin log
+        Log.Information($"{PluginInterface.Manifest.Name} loaded. Ready to watch your HP.");
     }
 
     public void Dispose()
     {   
-        WindowSystem.RemoveAllWindows();
-        ConfigWindow.Dispose();
-        MainWindow.Dispose();
+        WindowSystem.RemoveAllWindows(); // Clear memory related to all ImGUI windows
+        ConfigWindow.Dispose(); // Clear config window memory
         cleanupTaskToken?.Cancel(); // Stop cleaning dictionary on shutdown
+        PluginInterface.UiBuilder.Draw -= CheckHp; // Stop checking HP 
+        PluginInterface.UiBuilder.Draw -= DrawUI; // Stop checking to draw UI 
 
-        CommandManager.RemoveHandler(PartyHpCommand);
-        
-        
-        PluginInterface.UiBuilder.Draw -= CheckHp; // Stop checking HP every frame
-    }
-
-    private void OnCommand(string command, string args)
-    {
-        // in response to the slash command, just toggle the display status of our main ui
-        ToggleMainUI();
+        // Dispose commands
+        CommandManager.RemoveHandler(PartyHpCommand);   
     }
 
     private void OnPartyHpCommand(string command, string args)
     {   
-        // Method description: Displays HP of player and all party members in chat.
+        // Method description: Displays HP of player and all party members in chat after typing /php.
         // Show self HP
         var player = ClientState.LocalPlayer;
         if (player != null){
@@ -161,8 +143,6 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    private void DrawUI() => WindowSystem.Draw();
-
     private void CleanupLowHpWarnings()
     {   
         /* Method Description: Cleans up the lowHPWarnings dictionary so there are no memory issues after 
@@ -196,7 +176,6 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-
-    public void ToggleConfigUI() => ConfigWindow.Toggle();
-    public void ToggleMainUI() => MainWindow.Toggle();
+    private void DrawUI() => WindowSystem.Draw(); // Draw loop for all ImGUI windows
+    public void ToggleConfigUI() => ConfigWindow.Toggle(); // For the cog "Settings" button in plugin installer
 }
