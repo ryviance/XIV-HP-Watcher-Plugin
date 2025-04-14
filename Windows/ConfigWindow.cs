@@ -7,52 +7,31 @@ namespace HP_Watcher.Windows;
 
 public class ConfigWindow : Window, IDisposable
 {
-    private Configuration configuration;
+    private Configuration configuration; // private reference to Configuration.cs values
 
-    // We give this window a constant ID using ###
-    // This allows for labels being dynamic, like "{FPS Counter}fps###XYZ counter window",
-    // and the window ID will always be "###XYZ counter window" for ImGui
-    public ConfigWindow(Plugin plugin) : base("HP Watcher Settings###HP_Watcher_Config")
-    {
-        Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
-                ImGuiWindowFlags.NoScrollWithMouse;
-
-        Size = new Vector2(232, 90);
+    public ConfigWindow(Plugin plugin) 
+        : base("HP Watcher Settings###HP_Watcher_Config")
+    {   
+        // Configure the behavior of the window and it's size
+        Flags = ImGuiWindowFlags.NoScrollbar 
+      | ImGuiWindowFlags.NoScrollWithMouse 
+      | ImGuiWindowFlags.NoDocking;
+        
+        Size = new Vector2(260, 100);
         SizeCondition = ImGuiCond.Always;
 
-        configuration = plugin.Configuration;
+        configuration = plugin.Configuration; // reference Configuration object to edit values
     }
 
     public void Dispose() { }
 
-    public override void PreDraw()
+    public override void Draw() // called every frame when config window up
     {
-        // Flags must be added or removed before Draw() is being called, or they won't apply
-        if (configuration.IsConfigWindowMovable)
+        int threshold = configuration.HpThresholdPercent;
+        if (ImGui.InputInt("HP Threshold %", ref threshold)) // creates numeric field in config window
         {
-            Flags &= ~ImGuiWindowFlags.NoMove;
-        }
-        else
-        {
-            Flags |= ImGuiWindowFlags.NoMove;
-        }
-    }
-
-    public override void Draw()
-    {
-        // can't ref a property, so use a local copy
-        var configValue = configuration.SomePropertyToBeSavedAndWithADefault;
-        if (ImGui.Checkbox("Random Config Bool", ref configValue))
-        {
-            configuration.SomePropertyToBeSavedAndWithADefault = configValue;
-            // can save immediately on change, if you don't want to provide a "Save and Close" button
-            configuration.Save();
-        }
-
-        var movable = configuration.IsConfigWindowMovable;
-        if (ImGui.Checkbox("Movable Config Window", ref movable))
-        {
-            configuration.IsConfigWindowMovable = movable;
+            threshold = Math.Clamp(threshold, 1, 100); // restricts value 1-100
+            configuration.HpThresholdPercent = threshold; // updates config value
             configuration.Save();
         }
     }

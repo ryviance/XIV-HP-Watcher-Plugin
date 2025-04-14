@@ -1,20 +1,20 @@
-﻿using Dalamud.Configuration;
+﻿// File Name: Configuration.cs
+// Descriptions: Config variables, which affect how the plugin work
+
+using Dalamud.Configuration;
 using Dalamud.Plugin;
 using System;
 
 namespace HP_Watcher;
 
 [Serializable]
-public class Configuration : IPluginConfiguration
+public class Configuration : IPluginConfiguration 
 {
-    public int Version { get; set; } = 0;
-
-    public bool IsConfigWindowMovable { get; set; } = true;
-    public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
-
-    // the below exist just to make saving less cumbersome
-    public void Save()
-    {
+    public int Version { get; set; } = 1;
+    public int HpThresholdPercent { get; set; } = 60;
+    public void Save()  
+    {   
+        // Method description: Saves user config settings
         Plugin.PluginInterface.SavePluginConfig(this);
     }
 }
