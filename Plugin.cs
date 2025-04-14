@@ -108,43 +108,50 @@ public sealed class Plugin : IDalamudPlugin
     {   
         // Method description: Outputs a warning message if party member or player falls below threshold
         float threshold = Configuration.HpThresholdPercent / 100f;
+        bool chatWarningEnabled = Configuration.ChatWarningEnabled;
 
         var player = ClientState.LocalPlayer;
         if (player != null)
-        {   
+        {
             string playerKey = player.Name.TextValue;
             float hpPercent = (float)player.CurrentHp / player.MaxHp;
 
-            if (hpPercent < threshold)
-            {   
-                if (!lowHpWarnings.GetValueOrDefault(playerKey, false))
-                {
-                    Chat.Print($"WARNING: You are below {Configuration.HpThresholdPercent}% HP! ({player.CurrentHp}/{player.MaxHp})");
-                    lowHpWarnings[playerKey] = true;
-                }
-            } else {
+            if (hpPercent >= threshold)
+            {
                 lowHpWarnings[playerKey] = false;
+            }
+            else if (!lowHpWarnings.GetValueOrDefault(playerKey, false))
+            {
+                if (chatWarningEnabled)
+                {
+                    Chat.Print($"You are below {Configuration.HpThresholdPercent}% HP! ({player.CurrentHp}/{player.MaxHp})");
+                }
+                lowHpWarnings[playerKey] = true;
             }
         }
 
         foreach (var member in PartyList)
-        {   
+        {
             string memberKey = member.Name.TextValue;
             float partyHpPercent = (float)member.CurrentHP / member.MaxHP;
 
-            if (partyHpPercent < 0.6f)
-            {   
-                if (!lowHpWarnings.GetValueOrDefault(memberKey, false))
-                {
-                    Chat.Print($"WARNING: {member.Name} is below 60% HP! ({member.CurrentHP}/{member.MaxHP})");
-                    lowHpWarnings[memberKey] = true;
-                }
-            } else {
+            if (partyHpPercent >= threshold)
+            {
                 lowHpWarnings[memberKey] = false;
+                continue;
+            }
+
+            if (!lowHpWarnings.GetValueOrDefault(memberKey, false))
+            {
+                if (chatWarningEnabled)
+                {
+                    Chat.Print($"{member.Name} is below {Configuration.HpThresholdPercent}% HP! ({member.CurrentHP}/{member.MaxHP})");
+                }
+                lowHpWarnings[memberKey] = true;
             }
         }
     }
-
+    
     private void CleanupLowHpWarnings()
     {   
         /* Method Description: Cleans up the lowHPWarnings dictionary so there are no memory issues after 
@@ -167,7 +174,7 @@ public sealed class Plugin : IDalamudPlugin
             lastCleanupTime = DateTime.Now;
         }
     }
-
+    
     private async Task RunPeriodicCleanup(CancellationToken token)
     {   
         // Method description: Calls CleanupLowHpWarnings every 15 minutes

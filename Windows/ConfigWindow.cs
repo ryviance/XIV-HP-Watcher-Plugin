@@ -17,8 +17,8 @@ public class ConfigWindow : Window, IDisposable
       | ImGuiWindowFlags.NoScrollWithMouse 
       | ImGuiWindowFlags.NoDocking;
         
-        Size = new Vector2(260, 100);
-        SizeCondition = ImGuiCond.Always;
+        Size = new Vector2(350, 100);
+        SizeCondition = ImGuiCond.FirstUseEver; // Only use size the first time window opens
 
         configuration = plugin.Configuration; // reference Configuration object to edit values
     }
@@ -32,6 +32,13 @@ public class ConfigWindow : Window, IDisposable
         {
             threshold = Math.Clamp(threshold, 1, 100); // restricts value 1-100
             configuration.HpThresholdPercent = threshold; // updates config value
+            configuration.Save();
+        }
+
+        bool chatWarningEnabled = configuration.ChatWarningEnabled;
+        if (ImGui.Checkbox("Enable Chat Warning", ref chatWarningEnabled))
+        {
+            configuration.ChatWarningEnabled = chatWarningEnabled;
             configuration.Save();
         }
     }
