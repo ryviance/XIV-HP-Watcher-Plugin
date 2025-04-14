@@ -107,17 +107,19 @@ public sealed class Plugin : IDalamudPlugin
     private void CheckHp()
     {   
         // Method description: Outputs a warning message if party member or player falls below threshold
+        float threshold = Configuration.HpThresholdPercent / 100f;
+
         var player = ClientState.LocalPlayer;
         if (player != null)
         {   
             string playerKey = player.Name.TextValue;
             float hpPercent = (float)player.CurrentHp / player.MaxHp;
 
-            if (hpPercent < 0.6f)
+            if (hpPercent < threshold)
             {   
                 if (!lowHpWarnings.GetValueOrDefault(playerKey, false))
                 {
-                    Chat.Print($"WARNING: You are below 60% HP! ({player.CurrentHp}/{player.MaxHp})");
+                    Chat.Print($"WARNING: You are below {Configuration.HpThresholdPercent}% HP! ({player.CurrentHp}/{player.MaxHp})");
                     lowHpWarnings[playerKey] = true;
                 }
             } else {
