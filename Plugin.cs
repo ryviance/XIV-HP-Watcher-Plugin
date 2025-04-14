@@ -24,6 +24,11 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IChatGui Chat { get; private set; } = null!;  // For system messages in game from the plugin
     [PluginService] internal static IPartyList PartyList { get; private set; } = null!; // For party list functionality
 
+
+
+ // For game notification sounds
+
+
     // Constants for command strings
     private const string PartyHpCommand = "/php";
 
@@ -126,6 +131,11 @@ public sealed class Plugin : IDalamudPlugin
                 {
                     Chat.Print($"You are below {Configuration.HpThresholdPercent}% HP! ({player.CurrentHp}/{player.MaxHp})");
                 }
+                if (Configuration.SoundWarningEnabled)
+                {
+                    // Play sound alert
+
+                }
                 lowHpWarnings[playerKey] = true;
             }
         }
@@ -147,11 +157,15 @@ public sealed class Plugin : IDalamudPlugin
                 {
                     Chat.Print($"{member.Name} is below {Configuration.HpThresholdPercent}% HP! ({member.CurrentHP}/{member.MaxHP})");
                 }
+                if (Configuration.SoundWarningEnabled)
+                {
+                    // Play sound alert
+                }
                 lowHpWarnings[memberKey] = true;
             }
         }
     }
-    
+
     private void CleanupLowHpWarnings()
     {   
         /* Method Description: Cleans up the lowHPWarnings dictionary so there are no memory issues after 

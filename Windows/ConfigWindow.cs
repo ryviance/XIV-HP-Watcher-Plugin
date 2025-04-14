@@ -36,9 +36,16 @@ public class ConfigWindow : Window, IDisposable
         }
 
         bool chatWarningEnabled = configuration.ChatWarningEnabled;
-        if (ImGui.Checkbox("Enable Chat Warning", ref chatWarningEnabled))
+        if (ImGui.Checkbox("Chat Warning", ref chatWarningEnabled))
         {
             configuration.ChatWarningEnabled = chatWarningEnabled;
+            configuration.Save();
+        }
+
+        bool soundWarningEnabled = configuration.SoundWarningEnabled;
+        if (ImGui.Checkbox("Sound Warning", ref soundWarningEnabled))
+        {
+            configuration.SoundWarningEnabled = soundWarningEnabled;
             configuration.Save();
         }
     }
