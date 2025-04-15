@@ -14,6 +14,7 @@ public class Configuration : IPluginConfiguration
     public int HpThresholdPercent { get; set; } = 60;
     public bool ChatWarningEnabled { get; set; } = true;
     public bool SoundWarningEnabled { get; set; } = true;
+    public int SoundVolumePercent { get; set; } = 100;
     public void Save()  
     {   
         // Method description: Saves user config settings

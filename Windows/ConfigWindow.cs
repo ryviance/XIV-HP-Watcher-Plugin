@@ -48,5 +48,12 @@ public class ConfigWindow : Window, IDisposable
             configuration.SoundWarningEnabled = soundWarningEnabled;
             configuration.Save();
         }
+
+        int soundVolumePercent = configuration.SoundVolumePercent;
+        if (ImGui.InputInt("Sound Volume Percent", ref soundVolumePercent))
+        {
+            configuration.SoundVolumePercent = soundVolumePercent;
+            configuration.Save();
+        }
     }
 }
