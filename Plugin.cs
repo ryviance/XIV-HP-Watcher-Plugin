@@ -9,7 +9,9 @@ using Dalamud.Interface.Windowing;
 using HP_Watcher.Windows;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Media;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,11 +25,6 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IPluginLog Log { get; private set; } = null!; // For development/bug reports
     [PluginService] internal static IChatGui Chat { get; private set; } = null!;  // For system messages in game from the plugin
     [PluginService] internal static IPartyList PartyList { get; private set; } = null!; // For party list functionality
-
-
-
- // For game notification sounds
-
 
     // Constants for command strings
     private const string PartyHpCommand = "/php";
@@ -110,16 +107,19 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     private void CheckHp()
-    {   
-        // Method description: Outputs a warning message if party member or player falls below threshold
+    {
         float threshold = Configuration.HpThresholdPercent / 100f;
         bool chatWarningEnabled = Configuration.ChatWarningEnabled;
+        bool soundWarningEnabled = Configuration.SoundWarningEnabled;
+        var localPlayer = ClientState.LocalPlayer;
 
-        var player = ClientState.LocalPlayer;
-        if (player != null)
+        // Setup sound path once
+        var soundPath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "Data", "critical-health-pokemon.wav");
+
+        if (localPlayer != null)
         {
-            string playerKey = player.Name.TextValue;
-            float hpPercent = (float)player.CurrentHp / player.MaxHp;
+            string playerKey = localPlayer.Name.TextValue;
+            float hpPercent = (float)localPlayer.CurrentHp / localPlayer.MaxHp;
 
             if (hpPercent >= threshold)
             {
@@ -129,12 +129,12 @@ public sealed class Plugin : IDalamudPlugin
             {
                 if (chatWarningEnabled)
                 {
-                    Chat.Print($"You are below {Configuration.HpThresholdPercent}% HP! ({player.CurrentHp}/{player.MaxHp})");
+                    Chat.Print($"You are below {Configuration.HpThresholdPercent}% HP! ({localPlayer.CurrentHp}/{localPlayer.MaxHp})");
                 }
-                if (Configuration.SoundWarningEnabled)
+                if (soundWarningEnabled)
                 {
-                    // Play sound alert
-
+                    using var sound = new System.Media.SoundPlayer(soundPath);
+                    sound.Play();
                 }
                 lowHpWarnings[playerKey] = true;
             }
@@ -157,14 +157,16 @@ public sealed class Plugin : IDalamudPlugin
                 {
                     Chat.Print($"{member.Name} is below {Configuration.HpThresholdPercent}% HP! ({member.CurrentHP}/{member.MaxHP})");
                 }
-                if (Configuration.SoundWarningEnabled)
+                if (soundWarningEnabled)
                 {
-                    // Play sound alert
+                    using var sound = new System.Media.SoundPlayer(soundPath);
+                    sound.Play();
                 }
                 lowHpWarnings[memberKey] = true;
             }
         }
     }
+
 
     private void CleanupLowHpWarnings()
     {   
