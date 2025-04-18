@@ -7,6 +7,7 @@ using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using Dalamud.Interface.Windowing;
 using HP_Watcher.Windows;
+using NAudio.Wave;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -116,9 +117,12 @@ public sealed class Plugin : IDalamudPlugin
         // Setup sound path once
         var soundPath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "Data", "critical-health-pokemon.wav");
 
-        if (localPlayer != null)
+        if (localPlayer is null)
         {
-            string playerKey = localPlayer.Name.TextValue;
+            return;
+        }
+
+        string playerKey = localPlayer.Name.TextValue;
             float hpPercent = (float)localPlayer.CurrentHp / localPlayer.MaxHp;
 
             if (hpPercent >= threshold)
@@ -133,12 +137,10 @@ public sealed class Plugin : IDalamudPlugin
                 }
                 if (soundWarningEnabled)
                 {
-                    using var sound = new System.Media.SoundPlayer(soundPath);
-                    sound.Play();
+                    PlaySound(soundPath, Configuration.SoundVolumePercent);
                 }
                 lowHpWarnings[playerKey] = true;
             }
-        }
 
         foreach (var member in PartyList)
         {
@@ -159,8 +161,8 @@ public sealed class Plugin : IDalamudPlugin
                 }
                 if (soundWarningEnabled)
                 {
-                    using var sound = new System.Media.SoundPlayer(soundPath);
-                    sound.Play();
+                    PlaySound(soundPath, Configuration.SoundVolumePercent);
+
                 }
                 lowHpWarnings[memberKey] = true;
             }
@@ -199,6 +201,31 @@ public sealed class Plugin : IDalamudPlugin
             await Task.Delay(TimeSpan.FromMinutes(15), token);
             CleanupLowHpWarnings();
         }
+    }
+
+    private void PlaySound(string filePath, float volumePercent = 100f, int durationMs = 3000)
+    {
+        if (!File.Exists(filePath))
+        {
+            Log.Warning($"Sound file not found: {filePath}");
+            return;
+        }
+
+        var reader = new AudioFileReader(filePath)
+        {
+            Volume = Math.Clamp(volumePercent / 100f, 0f, 2f) // 0–200% volume
+        };
+
+        var output = new WaveOutEvent();
+        output.Init(reader);
+        output.Play();
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(durationMs);
+            output.Dispose();
+            reader.Dispose();
+        });
     }
 
     private void DrawUI() => WindowSystem.Draw(); // Draw loop for all ImGUI windows

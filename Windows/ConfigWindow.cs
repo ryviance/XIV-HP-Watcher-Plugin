@@ -50,7 +50,7 @@ public class ConfigWindow : Window, IDisposable
         }
 
         int soundVolumePercent = configuration.SoundVolumePercent;
-        if (ImGui.InputInt("Sound Volume Percent", ref soundVolumePercent))
+        if (ImGui.SliderInt("Sound Volume", ref soundVolumePercent, 0, 200, "%d%%"))
         {
             configuration.SoundVolumePercent = soundVolumePercent;
             configuration.Save();

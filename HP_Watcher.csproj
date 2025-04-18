@@ -21,5 +21,7 @@
   <ItemGroup>
     <PackageReference Include="System.Windows.Extensions" Version="9.0.0" />
   </ItemGroup>
-
+  <ItemGroup>
+  <PackageReference Include="NAudio" Version="2.1.0" />
+  </ItemGroup>
 </Project>
