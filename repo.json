@@ -10,7 +10,7 @@
       "ApplicableVersion": "any",
       "RepoUrl": "https://raw.githubusercontent.com/ryviance/XIV-HP-Watcher-Plugin/master/repo.json",
       "Tags": ["hp", "warning"],
-      "DownloadLinkInstall": "https://github.com/ryviance/XIV-HP-Watcher-Plugin/releases/download/v0.0.1/HP_Watcher-v1.0.0.zip",
+      "DownloadLinkInstall": "https://github.com/ryviance/XIV-HP-Watcher-Plugin/releases/download/v1.0.0/HP_Watcher-v1.0.0.zip",
       "DownloadLinkTesting": "",
       "DownloadLinkUpdate": "",
       "IconUrl": "https://raw.githubusercontent.com/ryviance/XIV-HP-Watcher-Plugin/master/Data/HP_Watcher_Icon.png",
