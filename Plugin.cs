@@ -108,67 +108,58 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     private void CheckHp()
-    {
-        float threshold = Configuration.HpThresholdPercent / 100f;
-        bool chatWarningEnabled = Configuration.ChatWarningEnabled;
-        bool soundWarningEnabled = Configuration.SoundWarningEnabled;
-        var localPlayer = ClientState.LocalPlayer;
+    {   
+        // Description: Check player and party member every frame for HP threshold + warning
+        float threshold = Configuration.ThresholdRatio;
+        bool chatWarning = Configuration.ChatWarningEnabled;
+        bool soundWarning = Configuration.SoundWarningEnabled;
+        string soundPath = Path.Combine(PluginInterface.AssemblyLocation.Directory!.FullName, "Data", "critical-health-pokemon.wav");
+        float volume = Configuration.SoundVolumePercent;
 
-        // Setup sound path once
-        var soundPath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "Data", "critical-health-pokemon.wav");
-
-        if (localPlayer is null)
-        {
-            return;
-        }
-
-        string playerKey = localPlayer.Name.TextValue;
-            float hpPercent = (float)localPlayer.CurrentHp / localPlayer.MaxHp;
-
-            if (hpPercent >= threshold)
-            {
-                lowHpWarnings[playerKey] = false;
-            }
-            else if (!lowHpWarnings.GetValueOrDefault(playerKey, false))
-            {
-                if (chatWarningEnabled)
-                {
-                    Chat.Print($"You are below {Configuration.HpThresholdPercent}% HP! ({localPlayer.CurrentHp}/{localPlayer.MaxHp})");
-                }
-                if (soundWarningEnabled)
-                {
-                    PlaySound(soundPath, Configuration.SoundVolumePercent);
-                }
-                lowHpWarnings[playerKey] = true;
-            }
+        var player = ClientState.LocalPlayer;
+        if (player != null)
+            CheckAndWarn(player.Name.TextValue, player.CurrentHp, player.MaxHp, threshold, chatWarning, soundWarning, soundPath, volume, isSelf: true);
 
         foreach (var member in PartyList)
         {
-            string memberKey = member.Name.TextValue;
-            float partyHpPercent = (float)member.CurrentHP / member.MaxHP;
-
-            if (partyHpPercent >= threshold)
-            {
-                lowHpWarnings[memberKey] = false;
+            if (player != null &&
+                member.Name == player.Name &&
+                member.World.RowId == player.HomeWorld.RowId)
                 continue;
-            }
 
-            if (!lowHpWarnings.GetValueOrDefault(memberKey, false))
-            {
-                if (chatWarningEnabled)
-                {
-                    Chat.Print($"{member.Name} is below {Configuration.HpThresholdPercent}% HP! ({member.CurrentHP}/{member.MaxHP})");
-                }
-                if (soundWarningEnabled)
-                {
-                    PlaySound(soundPath, Configuration.SoundVolumePercent);
-
-                }
-                lowHpWarnings[memberKey] = true;
-            }
+            CheckAndWarn(member.Name.TextValue, member.CurrentHP, member.MaxHP, threshold, chatWarning, soundWarning, soundPath, volume, isSelf: false);
         }
     }
 
+    private void CheckAndWarn(string playerName, uint currentHp, uint maxHp, float threshold, bool chatWarning, bool soundWarning, string soundPath, float volume, bool isSelf)
+    {   
+        // Description: Helper method for CheckHp(), checks conditions and sends warnings
+        float hpPercent = (float)currentHp / maxHp;
+
+        if (hpPercent >= threshold)
+        {
+            lowHpWarnings[playerName] = false;
+            return;
+        }
+
+        if (lowHpWarnings.GetValueOrDefault(playerName, false))
+            return;
+
+        if (chatWarning)
+        {
+            var message = isSelf
+                ? $"You are below {Configuration.HpThresholdPercent}% HP! ({currentHp}/{maxHp})"
+                : $"{playerName} is below {Configuration.HpThresholdPercent}% HP! ({currentHp}/{maxHp})";
+            Chat.Print(message);
+        }
+
+        if (soundWarning)
+        {
+            PlaySound(soundPath, volume);
+        }
+
+        lowHpWarnings[playerName] = true;
+    }
 
     private void CleanupLowHpWarnings()
     {   
@@ -204,7 +195,8 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     private void PlaySound(string filePath, float volumePercent = 100f, int durationMs = 3000)
-    {
+    {   
+        // Method  description: Play audio file at certain volume
         if (!File.Exists(filePath))
         {
             Log.Warning($"Sound file not found: {filePath}");
