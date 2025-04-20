@@ -40,6 +40,7 @@ public sealed class Plugin : IDalamudPlugin
     // ImGUI windows
     public readonly WindowSystem WindowSystem = new("HP_Watcher");
     private ConfigWindow ConfigWindow { get; init; }
+    private OverlayWindow OverlayWindow { get; init; }
 
     private CancellationTokenSource? cleanupTaskToken; // Threading for cleanup
 
@@ -51,6 +52,10 @@ public sealed class Plugin : IDalamudPlugin
         // Initialize and draw ImGUI config window
         ConfigWindow = new ConfigWindow(this);
         WindowSystem.AddWindow(ConfigWindow);
+
+        OverlayWindow = new OverlayWindow(Configuration);
+        WindowSystem.AddWindow(OverlayWindow);
+
 
         // UIBuilder.Draw is a hook for every-frame logic, not exclusively used for UI:
         PluginInterface.UiBuilder.Draw += CheckHp; // Check HP of party members and player every frame
@@ -72,6 +77,7 @@ public sealed class Plugin : IDalamudPlugin
         });
 
         // Add functionality to "Open" button in the plugin installer
+        PluginInterface.UiBuilder.OpenMainUi += ToggleConfigUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
 
         // Startup log message in Dalamud's plugin log
