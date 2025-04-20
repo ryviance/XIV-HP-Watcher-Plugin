@@ -111,7 +111,7 @@ public sealed class Plugin : IDalamudPlugin
         {
             foreach (var member in PartyList)
             {
-                if (member.Name == player?.Name && member.World.RowId == player?.HomeWorld.RowId) // Skip self
+                if (member.Name.TextValue == player?.Name.TextValue && member.World.RowId == player?.HomeWorld.RowId) // Skip self
                 {
                     continue;
                 }
