@@ -72,7 +72,7 @@ public class ConfigWindow : Window, IDisposable
 
             string[] colorOptions = new[] { "Red", "Blue", "Cyan", "Green" };
             // Get the index of the current config color (fallback to 0 if not found)
-            int selectedIndex = Array.IndexOf(colorOptions, configuration.ThresholdAlerts.HighlightColor.ToLower());
+            int selectedIndex = Array.FindIndex(colorOptions, c => string.Equals(c, configuration.ThresholdAlerts.HighlightColor, StringComparison.OrdinalIgnoreCase));
             if (selectedIndex < 0)
                 selectedIndex = 0; // default fallback
             if (ImGui.Combo("Highlight Color", ref selectedIndex, colorOptions, colorOptions.Length))
