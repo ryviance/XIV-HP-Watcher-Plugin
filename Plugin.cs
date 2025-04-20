@@ -28,6 +28,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IPartyList PartyList { get; private set; } = null!; // For party list functionality
 
     // Constants for command strings
+    private const string HpConfigCommand = "/hpconfig";
     private const string PartyHpCommand = "/php";
 
     // Variables for method utilities
@@ -60,6 +61,11 @@ public sealed class Plugin : IDalamudPlugin
         _ = RunPeriodicCleanup(cleanupTaskToken.Token); // Wait every 15 minutes to clean
 
         // Add commands and their help messages
+        CommandManager.AddHandler(HpConfigCommand, new CommandInfo(OnHpConfigCommand)
+        {
+            HelpMessage = "Opens HP Watcher configuration window."
+        });
+
         CommandManager.AddHandler(PartyHpCommand, new CommandInfo(OnPartyHpCommand)
         {
             HelpMessage = "Displays HP of self and party members."
@@ -82,6 +88,7 @@ public sealed class Plugin : IDalamudPlugin
 
         // Dispose commands
         CommandManager.RemoveHandler(PartyHpCommand);   
+        CommandManager.RemoveHandler(HpConfigCommand);   
     }
 
     private void OnPartyHpCommand(string command, string args)
@@ -107,12 +114,18 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
+    private void OnHpConfigCommand(string command, string args)
+    {
+        // Method description: Opens plugin configuration window
+        ToggleConfigUI();
+    }
+
     private void CheckHp()
     {   
         // Description: Check player and party member every frame for HP threshold + warning
         float threshold = Configuration.ThresholdRatio;
-        bool chatWarning = Configuration.ChatWarningEnabled;
-        bool soundWarning = Configuration.SoundWarningEnabled;
+        bool chatWarning = Configuration.ThresholdAlerts.ChatEnabled;
+        bool soundWarning = Configuration.ThresholdAlerts.SoundEnabled;
         string soundPath = Path.Combine(PluginInterface.AssemblyLocation.Directory!.FullName, "Data", "critical-health-pokemon.wav");
         float volume = Configuration.SoundVolumePercent;
 
