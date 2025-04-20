@@ -5,8 +5,9 @@ A plugin to monitor player HP in FFXIV.
 
 ## Features
 - Set a configurable HP % threshold to alert the user
-- Text alerts, overlay alerts, and sound alerts
+- Text alerts, overlay alerts, and sound alerts <br />
 
+    ![image](https://github.com/user-attachments/assets/641981bb-216e-4095-b556-586bf931eb93)
 ## Commands
 /hpconfig - Opens HP Watcher configuration window. <br />
 
@@ -14,7 +15,7 @@ A plugin to monitor player HP in FFXIV.
 
 /php - Displays HP of self and party members.
 
-![image](https://github.com/user-attachments/assets/a0259716-1e01-4b45-8d1e-22f086f86e44)
+![image](https://github.com/user-attachments/assets/7c5fa983-0ca8-49c0-8e86-bb5fbd10c7de)
 
 ## Installation
 In-game navigate to: <br />
