@@ -38,6 +38,14 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.Spacing();
         ImGui.Dummy(new Vector2(0, 10));
+        ImGui.Text("Overlay Settings");
+
+        bool overlayLocked = configuration.OverlayLocked;
+        if (ImGui.Checkbox("Lock Overlay", ref overlayLocked))
+        {
+            configuration.OverlayLocked = overlayLocked;
+            configuration.Save();
+        }
 
         if (ImGui.CollapsingHeader("HP Threshold Alert Settings"))
         {  

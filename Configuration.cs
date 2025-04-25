@@ -30,7 +30,7 @@ public class Configuration : IPluginConfiguration
     // Overlay settings
     public Vector2 OverlayPosition = new Vector2(200, 200);
     public Vector2 OverlaySize = new Vector2(200, 20);
-    public bool OverlayUnlocked = true;
+    public bool OverlayLocked = false;
 
 
     public void Save()  
