@@ -1,18 +1,18 @@
 using System;
-using System.Configuration;
 using System.Numerics;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
 
 namespace HP_Watcher.Windows;
-public class OverlayWindow : Window
+
+public class OverlayWindow : Window, IDisposable
 {
     private Configuration config;
+    private Vector2 overlaySize = new Vector2(200, 20); // default size
+    private Vector2 overlayPos = new Vector2(100, 100); // default position
 
-    public OverlayWindow(Configuration config) 
-        : base("###HP_Watcher_Overlay", ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoBackground |
-                                        ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoScrollbar |
-                                        ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoMove)
+    public OverlayWindow(Configuration config)
+        : base("###HP_Watcher_Overlay")
     {
         this.config = config;
         IsOpen = true;
@@ -21,48 +21,44 @@ public class OverlayWindow : Window
 
     public void Dispose() { }
 
+    public override void PreDraw()
+    {
+        Flags = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoScrollbar |
+                ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoSavedSettings |
+                ImGuiWindowFlags.NoBackground;
+
+        if (!config.OverlayUnlocked)
+        {
+            Flags |= ImGuiWindowFlags.NoInputs | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoResize;
+        }
+
+        Size = overlaySize;
+        SizeCondition = ImGuiCond.FirstUseEver;
+
+        Position = overlayPos;
+        PositionCondition = ImGuiCond.FirstUseEver;
+    }
+
     public override void Draw()
     {
-        if (!config.ThresholdAlerts.HighlightEnabled)
-            return;
+        var drawList = ImGui.GetWindowDrawList();
+        var pos = ImGui.GetWindowPos();
+        var size = ImGui.GetWindowSize();
 
-        ImGui.SetNextWindowPos(new Vector2(10, 300), ImGuiCond.Always);
-        ImGui.SetNextWindowSize(new Vector2(300, 300), ImGuiCond.Always);
-        ImGui.Begin("###HPOverlayWindow", ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs);
-
-        // Show for yourself
-        var player = Plugin.ClientState.LocalPlayer;
-        if (player != null)
-        {
-            float hpPercent = (float)player.CurrentHp / player.MaxHp;
-            if (hpPercent < config.ThresholdRatio)
-            {
-                var color = config.ThresholdAlerts.HighlightColor.ToLower() == "blue"
-                    ? new Vector4(0f, 0.4f, 1f, 0.4f)
-                    : new Vector4(1f, 0f, 0f, 0.4f);
-
-                ImGui.PushStyleColor(ImGuiCol.Button, color);
-                ImGui.Button($"{player.Name.TextValue} LOW HP!");
-                ImGui.PopStyleColor();
-            }
+        // Save position/size while unlocked
+        if (config.OverlayUnlocked)
+        {   
+            ImGui.PushStyleColor(ImGuiCol.ResizeGrip, new Vector4(0, 0, 0, 0));
+            ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(float.MaxValue, float.MaxValue));
+            overlayPos = pos;
+            overlaySize = size;
         }
 
-        // Show for party members
-        foreach (var member in Plugin.PartyList)
-        {
-            float partyHpPercent = (float)member.CurrentHP / member.MaxHP;
-            if (partyHpPercent < config.ThresholdRatio)
-            {
-                var color = config.ThresholdAlerts.HighlightColor.ToLower() == "blue"
-                    ? new Vector4(0f, 0.4f, 1f, 0.4f)
-                    : new Vector4(1f, 0f, 0f, 0.4f);
-
-                ImGui.PushStyleColor(ImGuiCol.Button, color);
-                ImGui.Button($"{member.Name.TextValue} LOW HP!");
-                ImGui.PopStyleColor();
-            }
-        }
-
-        ImGui.End();
+        // Draw translucent red rectangle
+        drawList.AddRectFilled(
+            pos,
+            new Vector2(pos.X + size.X, pos.Y + size.Y),
+            ImGui.GetColorU32(new Vector4(0.9f, 0.1f, 0.1f, 0.4f))
+        );
     }
 }

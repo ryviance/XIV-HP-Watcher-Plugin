@@ -4,6 +4,7 @@
 using Dalamud.Configuration;
 using Dalamud.Plugin;
 using System;
+using System.Numerics;
 
 namespace HP_Watcher;
 
@@ -25,6 +26,13 @@ public class Configuration : IPluginConfiguration
     public int SoundVolumePercent { get; set; } = 100;
     public AlertSettings ThresholdAlerts { get; set; } = new();
     public AlertSettings IncomingDamageAlerts { get; set; } = new();
+
+    // Overlay settings
+    public Vector2 OverlayPosition = new Vector2(200, 200);
+    public Vector2 OverlaySize = new Vector2(200, 20);
+    public bool OverlayUnlocked = true;
+
+
     public void Save()  
     {   
         // Method description: Saves user config settings
