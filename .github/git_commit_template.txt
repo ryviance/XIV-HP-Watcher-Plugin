@@ -1,0 +1,11 @@
+[Scope] Short descriptive title (e.g. [UI/Overlay] Disk save improvement, window relativity)
+
+- Bullet point 1 (what changed)
+
+# Examples:
+# - Saves user overlay settings to disk
+# - Fixed overlay style padding bug when locking/unlocking
+# - Put pre-emptive damage alert features into conditional compilation
+# - Progress towards window size relative UI positioning
+
+# Related Issues: Closes #__, Fixes #__, etc.
