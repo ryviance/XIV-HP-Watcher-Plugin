@@ -26,34 +26,74 @@ public class ConfigWindow : Window, IDisposable
     public void Dispose() { }
 
     public override void Draw() // called every frame when config window up
-    {
-        int threshold = configuration.HpThresholdPercent;
-        if (ImGui.InputInt("HP Threshold %", ref threshold)) // creates numeric field in config window
-        {
-            threshold = Math.Clamp(threshold, 1, 100); // restricts value 1-100
-            configuration.HpThresholdPercent = threshold; // updates config value
-            configuration.Save();
-        }
-
-        bool chatWarningEnabled = configuration.ChatWarningEnabled;
-        if (ImGui.Checkbox("Chat Warning", ref chatWarningEnabled))
-        {
-            configuration.ChatWarningEnabled = chatWarningEnabled;
-            configuration.Save();
-        }
-
-        bool soundWarningEnabled = configuration.SoundWarningEnabled;
-        if (ImGui.Checkbox("Sound Warning", ref soundWarningEnabled))
-        {
-            configuration.SoundWarningEnabled = soundWarningEnabled;
-            configuration.Save();
-        }
+    {   
+        ImGui.Text("General Settings");
 
         int soundVolumePercent = configuration.SoundVolumePercent;
-        if (ImGui.SliderInt("Sound Volume", ref soundVolumePercent, 0, 200, "%d%%"))
+        if (ImGui.SliderInt("Alert Sound Volume", ref soundVolumePercent, 0, 200, "%d%%"))
         {
             configuration.SoundVolumePercent = soundVolumePercent;
             configuration.Save();
+        }
+
+        ImGui.Spacing();
+        ImGui.Dummy(new Vector2(0, 10));
+        ImGui.Text("Overlay Settings");
+
+        bool overlayLocked = configuration.OverlayLocked;
+        if (ImGui.Checkbox("Lock Overlay", ref overlayLocked))
+        {
+            configuration.OverlayLocked = overlayLocked;
+            configuration.Save();
+        }
+
+        if (ImGui.CollapsingHeader("HP Threshold Alert Settings"))
+        {  
+            int threshold = configuration.HpThresholdPercent;
+            if (ImGui.InputInt("HP Threshold %", ref threshold)) // creates numeric field in config window
+            {
+                threshold = Math.Clamp(threshold, 1, 100); // restricts value 1-100
+                configuration.HpThresholdPercent = threshold; // updates config value
+                configuration.Save();
+            }
+
+            bool chatWarningEnabled = configuration.ThresholdAlerts.ChatEnabled;
+            if (ImGui.Checkbox("Chat Warning", ref chatWarningEnabled))
+            {
+                configuration.ThresholdAlerts.ChatEnabled = chatWarningEnabled;
+                configuration.Save();
+            }
+
+            bool soundWarningEnabled = configuration.ThresholdAlerts.SoundEnabled;
+            if (ImGui.Checkbox("Sound Warning", ref soundWarningEnabled))
+            {
+                configuration.ThresholdAlerts.SoundEnabled = soundWarningEnabled;
+                configuration.Save();
+            }
+
+            bool highlightWarningEnabled = configuration.ThresholdAlerts.HighlightEnabled;
+            if (ImGui.Checkbox("Highlight Warning", ref highlightWarningEnabled))
+            {
+                configuration.ThresholdAlerts.HighlightEnabled = highlightWarningEnabled;
+                configuration.Save();
+            }
+
+            string[] colorOptions = new[] { "Red", "Blue", "Cyan", "Green" };
+            // Get the index of the current config color (fallback to 0 if not found)
+            int selectedIndex = Array.FindIndex(colorOptions, c => string.Equals(c, configuration.ThresholdAlerts.HighlightColor, StringComparison.OrdinalIgnoreCase));
+            if (selectedIndex < 0)
+                selectedIndex = 0; // default fallback
+            if (ImGui.Combo("Highlight Color", ref selectedIndex, colorOptions, colorOptions.Length))
+            {
+                configuration.ThresholdAlerts.HighlightColor = colorOptions[selectedIndex];
+                configuration.Save();
+            }
+        }
+
+        ImGui.Spacing();
+
+        if (ImGui.CollapsingHeader("Lethal Damage Alert Settings"))
+        {  
         }
     }
 }

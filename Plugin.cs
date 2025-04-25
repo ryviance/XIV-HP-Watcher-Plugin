@@ -28,6 +28,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IPartyList PartyList { get; private set; } = null!; // For party list functionality
 
     // Constants for command strings
+    private const string HpConfigCommand = "/hpconfig";
     private const string PartyHpCommand = "/php";
 
     // Variables for method utilities
@@ -39,6 +40,7 @@ public sealed class Plugin : IDalamudPlugin
     // ImGUI windows
     public readonly WindowSystem WindowSystem = new("HP_Watcher");
     private ConfigWindow ConfigWindow { get; init; }
+    private OverlayWindow OverlayWindow { get; init; }
 
     private CancellationTokenSource? cleanupTaskToken; // Threading for cleanup
 
@@ -51,6 +53,10 @@ public sealed class Plugin : IDalamudPlugin
         ConfigWindow = new ConfigWindow(this);
         WindowSystem.AddWindow(ConfigWindow);
 
+        OverlayWindow = new OverlayWindow(Configuration);
+        WindowSystem.AddWindow(OverlayWindow);
+
+
         // UIBuilder.Draw is a hook for every-frame logic, not exclusively used for UI:
         PluginInterface.UiBuilder.Draw += CheckHp; // Check HP of party members and player every frame
         PluginInterface.UiBuilder.Draw += DrawUI; // Check every frame if it needs to draw config window (due to button/command, etc.)
@@ -60,12 +66,18 @@ public sealed class Plugin : IDalamudPlugin
         _ = RunPeriodicCleanup(cleanupTaskToken.Token); // Wait every 15 minutes to clean
 
         // Add commands and their help messages
+        CommandManager.AddHandler(HpConfigCommand, new CommandInfo(OnHpConfigCommand)
+        {
+            HelpMessage = "Opens HP Watcher configuration window."
+        });
+
         CommandManager.AddHandler(PartyHpCommand, new CommandInfo(OnPartyHpCommand)
         {
             HelpMessage = "Displays HP of self and party members."
         });
 
         // Add functionality to "Open" button in the plugin installer
+        PluginInterface.UiBuilder.OpenMainUi += ToggleConfigUI;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUI;
 
         // Startup log message in Dalamud's plugin log
@@ -82,6 +94,7 @@ public sealed class Plugin : IDalamudPlugin
 
         // Dispose commands
         CommandManager.RemoveHandler(PartyHpCommand);   
+        CommandManager.RemoveHandler(HpConfigCommand);   
     }
 
     private void OnPartyHpCommand(string command, string args)
@@ -98,7 +111,7 @@ public sealed class Plugin : IDalamudPlugin
         {
             foreach (var member in PartyList)
             {
-                if (member.Name == player?.Name && member.World.RowId == player?.HomeWorld.RowId) // Skip self
+                if (member.Name.TextValue == player?.Name.TextValue && member.World.RowId == player?.HomeWorld.RowId) // Skip self
                 {
                     continue;
                 }
@@ -107,12 +120,18 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
+    private void OnHpConfigCommand(string command, string args)
+    {
+        // Method description: Opens plugin configuration window
+        ToggleConfigUI();
+    }
+
     private void CheckHp()
     {   
         // Description: Check player and party member every frame for HP threshold + warning
         float threshold = Configuration.ThresholdRatio;
-        bool chatWarning = Configuration.ChatWarningEnabled;
-        bool soundWarning = Configuration.SoundWarningEnabled;
+        bool chatWarning = Configuration.ThresholdAlerts.ChatEnabled;
+        bool soundWarning = Configuration.ThresholdAlerts.SoundEnabled;
         string soundPath = Path.Combine(PluginInterface.AssemblyLocation.Directory!.FullName, "Data", "critical-health-pokemon.wav");
         float volume = Configuration.SoundVolumePercent;
 
