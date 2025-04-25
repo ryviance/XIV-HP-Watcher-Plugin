@@ -90,10 +90,12 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
+        #if DEBUG
         ImGui.Spacing();
 
         if (ImGui.CollapsingHeader("Lethal Damage Alert Settings"))
         {  
         }
+        #endif
     }
 }

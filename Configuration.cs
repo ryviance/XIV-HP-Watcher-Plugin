@@ -28,7 +28,7 @@ public class Configuration : IPluginConfiguration
     public AlertSettings IncomingDamageAlerts { get; set; } = new();
 
     // Overlay settings
-    public Vector2 OverlayPosition = new Vector2(200, 200);
+    public Vector2 OverlayRelativePosition = new Vector2(0.1f, 0.1f);
     public Vector2 OverlaySize = new Vector2(200, 20);
     public bool OverlayLocked = false;
 
